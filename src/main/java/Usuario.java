@@ -1,5 +1,7 @@
+import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.KeyPair;
+import com.jcraft.jsch.Session;
 
 import java.io.*;
 import java.net.Socket;
@@ -56,11 +58,16 @@ public class Usuario {
                     }
                 }
             }
+            System.out.println("Introduza el usuario: ");
+            String usuario = scanner.nextLine();
+            System.out.println("Introduzca la contraseña: ");
+            String contrasena = scanner.nextLine();
             System.out.print("Comenzamos la conexion ssh");
             for (int i = 0; i<3; i++){
                 Thread.sleep(500);
                 System.out.print(".");
             }
+            connect_ssh(usuario,contrasena);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -75,6 +82,10 @@ public class Usuario {
             kpair.writePrivateKey(file);
             kpair.writePublicKey(file+".pub", comment);
             kpair.dispose();
+            File f = new File(file);
+            f.setReadable(true, true);
+            f.setWritable(true, true);
+            f.setExecutable(false,false);
         }catch (Exception e){
 
         }
@@ -87,5 +98,40 @@ public class Usuario {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    boolean connect_ssh(String user, String pass){
+        Boolean exito = true;
+        try {
+            JSch jsch = new JSch();
+
+            String privateKey = "/home/jparejag/.ssh/id_rsa";
+
+            jsch.addIdentity(privateKey);
+            System.out.println("Identity added");
+
+            Session session = jsch.getSession(user,"",22);
+            session.setPassword(pass);
+
+            session.setConfig("StrictHostKeyChecking", "no");
+            System.out.println("Session created");
+
+            session.connect();
+            System.out.println("Session connected....");
+
+            Channel channel = session.openChannel("exec");
+            channel.setInputStream(System.in);
+            channel.setOutputStream(System.out);
+
+            channel.connect(3*1000);
+
+        } catch (Exception e) {
+            exito = false;
+        }finally {
+            return exito;
+        }
+
+
+
     }
 }
