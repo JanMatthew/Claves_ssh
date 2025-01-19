@@ -24,6 +24,7 @@ public class Usuario {
         try {
             socket = new Socket(HOST, PORT);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             Scanner scanner = new Scanner(System.in);
             File clave_publ = new File("/Users/matthew/.ssh/id_rsa.pub");
             File clave_priv = new File("/Users/matthew/.ssh/id_rsa");
@@ -42,17 +43,14 @@ public class Usuario {
                     generate_keys(comment,out);
                 } else {
                     out.println("Clave Antigua");
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     System.out.println(in.readLine());
                     comment = scanner.nextLine();
                     out.println(comment);
-                    String validadcion = in.readLine();
-                    if (validadcion.equals("Usuario valido")) {
+                    if (in.readLine().equals("Usuario valido")) {
                         System.out.println("Acceso autorizado");
                     } else {
                         System.out.println("Se generara una nueva clave publica y se enviara al servidor.");
                         generate_keys(comment,out);
-                        //send_keys(out);
                     }
                 }
             }
@@ -67,6 +65,10 @@ public class Usuario {
                 for (int i = 0; i < 3; i++) {
                     Thread.sleep(500);
                     System.out.print(".");
+                }
+                if(!connect_ssh(usuario, contrasena)){
+                    System.out.printf("Conexion fallida, generando nueva clave.");
+                    generate_keys(comment,out);
                 }
             }while (!connect_ssh(usuario, contrasena));
         } catch (Exception e) {
