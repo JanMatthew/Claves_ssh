@@ -1,7 +1,4 @@
-import com.jcraft.jsch.Channel;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.KeyPair;
-import com.jcraft.jsch.Session;
+import com.jcraft.jsch.*;
 
 import java.io.*;
 import java.net.Socket;
@@ -33,16 +30,16 @@ public class Usuario {
             if (!clave_publ.exists() || !clave_priv.exists()) {
                 System.out.println("Alguna de sus claves no existe.\nSe le creara una nueva.\nIntroduza un comment: ");
                 comment = scanner.nextLine();
-                generate_keys(comment);
-                send_keys(out);
+                out.println("Clave Nueva");
+                generate_keys(comment,out);
             } else {
                 long miliSecDif = System.currentTimeMillis() - clave_publ.lastModified();
                 long difDias = TimeUnit.MILLISECONDS.toDays(miliSecDif);
                 if (difDias > 30) {
                     System.out.println("Su clave publica esta caducada.\nSe le creara una nueva.\nIntroduza un comment: ");
                     comment = scanner.nextLine();
-                    generate_keys(comment);
-                    send_keys(out);
+                    out.println("Clave Nueva");
+                    generate_keys(comment,out);
                 } else {
                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     System.out.println(in.readLine());
@@ -53,46 +50,63 @@ public class Usuario {
                         System.out.println("Acceso autorizado");
                     } else {
                         System.out.println("Se generara una nueva clave publica y se enviara al servidor.\nIntroduza un comment: ");
-                        generate_keys(comment);
-                        send_keys(out);
+                        generate_keys(comment,out);
+                        //send_keys(out);
                     }
                 }
             }
-            System.out.println("Introduza el usuario: ");
-            String usuario = scanner.nextLine();
-            System.out.println("Introduzca la contraseña: ");
-            String contrasena = scanner.nextLine();
-            System.out.print("Comenzamos la conexion ssh");
-            for (int i = 0; i<3; i++){
-                Thread.sleep(500);
-                System.out.print(".");
-            }
-            connect_ssh(usuario,contrasena);
+            String usuario;
+            String contrasena;
+            do {
+                System.out.println("Introduza el usuario: ");
+                usuario = scanner.nextLine();
+                System.out.println("Introduzca la contraseña: ");
+                contrasena = scanner.nextLine();
+                System.out.print("Comenzamos la conexion ssh");
+                for (int i = 0; i < 3; i++) {
+                    Thread.sleep(500);
+                    System.out.print(".");
+                }
+            }while (!connect_ssh(usuario, contrasena));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    void generate_keys(String comment){
+    void generate_keys(String commen, PrintWriter out){
         JSch jsch = new JSch();
         String file = "/home/jparejag/.ssh/id_rsa";
 
         try{
             KeyPair kpair = KeyPair.genKeyPair(jsch, KeyPair.RSA, 2048);
             kpair.writePrivateKey(file);
-            kpair.writePublicKey(file+".pub", comment);
+            kpair.writePublicKey(file+".pub", "jmatthew");
             kpair.dispose();
-            File f = new File(file);
-            f.setReadable(true, true);
-            f.setWritable(true, true);
-            f.setExecutable(false,false);
+            File pri = new File(file);
+            pri.setReadable(false, false);
+            pri.setWritable(false, false);
+            pri.setExecutable(false, false);
+
+            pri.setReadable(true, true);
+            pri.setWritable(true, true);
+
+            File pub = new File(file+".pub");
+            pub.setReadable(false, false);
+            pub.setWritable(false, false);
+            pub.setExecutable(false, false);
+
+            pub.setReadable(true, true);
+            pub.setWritable(true, true);
+
+            send_keys(out, file);
+
         }catch (Exception e){
 
         }
     }
 
-    void send_keys(PrintWriter out){
-        File f = new File("/home/jparejag/.ssh/id_rsa.pub");
+    void send_keys(PrintWriter out, String keyPath){
+        File f = new File(keyPath + ".pub");
         try (BufferedReader br = new BufferedReader(new FileReader(f))) {
             out.println(br.readLine());
         } catch (IOException e) {
@@ -105,13 +119,13 @@ public class Usuario {
         try {
             JSch jsch = new JSch();
 
-            String privateKey = "/home/jparejag/.ssh/id_rsa";
+            String privateKey = "/Users/matthew/.ssh/id_rsa";
 
             jsch.addIdentity(privateKey);
             System.out.println("Identity added");
 
             Session session = jsch.getSession(user,"",22);
-            session.setPassword(pass);
+            session.setPassword("110777");
 
             session.setConfig("StrictHostKeyChecking", "no");
             System.out.println("Session created");
@@ -119,7 +133,7 @@ public class Usuario {
             session.connect();
             System.out.println("Session connected....");
 
-            Channel channel = session.openChannel("exec");
+            Channel channel = session.openChannel("shell");
             channel.setInputStream(System.in);
             channel.setOutputStream(System.out);
 
