@@ -6,7 +6,7 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 public class Usuario {
-    private final String HOST = "localhost";
+    private final String HOST = "192.168.0.40";
     private final int PORT = 50000;
 
     public Usuario() {
@@ -25,8 +25,8 @@ public class Usuario {
             socket = new Socket(HOST, PORT);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
             Scanner scanner = new Scanner(System.in);
-            File clave_publ = new File("/home/jparejag/.ssh/id_rsa.pub");
-            File clave_priv = new File("/home/jparejag/.ssh/id_rsa");
+            File clave_publ = new File("/Users/matthew/.ssh/id_rsa.pub");
+            File clave_priv = new File("/Users/matthew/.ssh/id_rsa");
             if (!clave_publ.exists() || !clave_priv.exists()) {
                 System.out.println("Alguna de sus claves no existe.\nSe le creara una nueva.\nIntroduza un comment: ");
                 comment = scanner.nextLine();
@@ -41,6 +41,7 @@ public class Usuario {
                     out.println("Clave Nueva");
                     generate_keys(comment,out);
                 } else {
+                    out.println("Clave Antigua");
                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     System.out.println(in.readLine());
                     comment = scanner.nextLine();
@@ -49,7 +50,7 @@ public class Usuario {
                     if (validadcion.equals("Usuario valido")) {
                         System.out.println("Acceso autorizado");
                     } else {
-                        System.out.println("Se generara una nueva clave publica y se enviara al servidor.\nIntroduza un comment: ");
+                        System.out.println("Se generara una nueva clave publica y se enviara al servidor.");
                         generate_keys(comment,out);
                         //send_keys(out);
                     }
@@ -58,9 +59,9 @@ public class Usuario {
             String usuario;
             String contrasena;
             do {
-                System.out.println("Introduza el usuario: ");
+                System.out.println("Introduza el usuario ssh: ");
                 usuario = scanner.nextLine();
-                System.out.println("Introduzca la contraseña: ");
+                System.out.println("Introduzca la contraseña ssh: ");
                 contrasena = scanner.nextLine();
                 System.out.print("Comenzamos la conexion ssh");
                 for (int i = 0; i < 3; i++) {
@@ -73,14 +74,14 @@ public class Usuario {
         }
     }
 
-    void generate_keys(String commen, PrintWriter out){
+    void generate_keys(String comment, PrintWriter out){
         JSch jsch = new JSch();
-        String file = "/home/jparejag/.ssh/id_rsa";
+        String file = "/Users/matthew/.ssh/id_rsa";
 
         try{
             KeyPair kpair = KeyPair.genKeyPair(jsch, KeyPair.RSA, 2048);
             kpair.writePrivateKey(file);
-            kpair.writePublicKey(file+".pub", "jmatthew");
+            kpair.writePublicKey(file+".pub", comment);
             kpair.dispose();
             File pri = new File(file);
             pri.setReadable(false, false);
@@ -124,8 +125,8 @@ public class Usuario {
             jsch.addIdentity(privateKey);
             System.out.println("Identity added");
 
-            Session session = jsch.getSession(user,"",22);
-            session.setPassword("110777");
+            Session session = jsch.getSession(user,"192.168.0.40",22);
+            session.setPassword(pass);
 
             session.setConfig("StrictHostKeyChecking", "no");
             System.out.println("Session created");
@@ -144,8 +145,5 @@ public class Usuario {
         }finally {
             return exito;
         }
-
-
-
     }
 }

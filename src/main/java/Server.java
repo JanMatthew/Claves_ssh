@@ -35,7 +35,7 @@ public class Server {
                 ProcessBuilder pb = new ProcessBuilder("grep","-w", "-c",comment, "/home/jparejag/.ssh/authorized_keys");
                 Process p = pb.start();
                 BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                if(in.readLine().equals("1")){
+                if(Integer.parseInt(in.readLine()) > 0){
                     out.println("Usuario valido");
                 }
                 else {
